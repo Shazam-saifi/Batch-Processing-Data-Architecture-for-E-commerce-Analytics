@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+data/processed/
+data/raw/instacart/*.csv
+postgres_data/
+airflow/logs/
+airflow/plugins/

@@ -1,0 +1,107 @@
+name: ecommerce_batch_analytics
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "${KAFKA_HOST_PORT:-19092}:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    env_file:
+      - .env.example
+    volumes:
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ingestion:
+    build:
+      context: ./ingestion_service
+    profiles:
+      - jobs
+    env_file:
+      - .env.example
+    depends_on:
+      - kafka
+    volumes:
+      - ./data:/app/data:ro
+
+  spark-job:
+    build:
+      context: ./spark_jobs
+    profiles:
+      - jobs
+    env_file:
+      - .env.example
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data:ro
+
+  airflow:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    image: ecommerce-airflow:2.9.3
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.example
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://ecommerce:ecommerce_password@postgres:5432/ecommerce_analytics
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+      AIRFLOW_PROJECT_DIR: ${PWD:-/opt/airflow/project}
+    ports:
+      - "${AIRFLOW_HOST_PORT:-8081}:8080"
+    volumes:
+      - type: bind
+        source: .
+        target: /opt/airflow/project
+      - type: bind
+        source: .
+        target: ${PWD:-/opt/airflow/project}
+      - type: bind
+        source: ./airflow/dags
+        target: /opt/airflow/dags
+        read_only: true
+      - type: bind
+        source: ./data
+        target: /opt/airflow/data
+        read_only: true
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: >
+      bash -c " airflow db migrate && airflow users create --username $${AIRFLOW_ADMIN_USER} --password $${AIRFLOW_ADMIN_PASSWORD} --firstname Data --lastname Engineer --role Admin --email admin@example.com || true && airflow webserver & airflow scheduler "
+
+volumes:
+  postgres_data:
