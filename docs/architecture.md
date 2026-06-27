@@ -20,7 +20,7 @@ Kafka is included as the durable ingestion buffer proposed in the conception pha
 
 Spark performs:
 
-- null handling on required identifiers, dates, quantity, and price
+- null handling on required identifiers, dates, quantity, and price.
 - invalid row filtering for non-positive quantities and negative prices
 - line revenue calculation
 - monthly sales aggregation
