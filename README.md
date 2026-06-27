@@ -1,222 +1,329 @@
-# Batch Processing Data Architecture for E-commerce Analytics
+# Batch Processing Data Architecture for E-Commerce Analytics
 
-This project implements the submitted conception-phase design as a containerized batch-processing data architecture for e-commerce analytics using an Instacart-style dataset.
+## Project Overview
 
-The system ingests raw order data, publishes validated records to Kafka, processes scheduled batch analytics with Spark, stores curated outputs in PostgreSQL, exposes ML-ready customer features, and orchestrates the workflow with Airflow.
+This project implements a scalable batch-processing data architecture for e-commerce analytics using modern data engineering technologies. The system ingests transactional data from the Instacart Market Basket Analysis dataset, processes it through a distributed batch-processing pipeline, and generates analytical datasets that can support business intelligence and future machine learning applications.
 
-## Architecture
+The architecture follows a microservices-based design and is fully containerized using Docker. Workflow orchestration is managed by Apache Airflow, while Apache Kafka provides reliable message streaming between services. Apache Spark performs batch processing and data aggregation before storing analytical results in PostgreSQL.
 
-```text
-Raw CSV Files
-    |
-    v
-Data Ingestion Service
-    |
-    v
-Apache Kafka Topic: ecommerce.orders
-    |
-    v
-Apache Spark Batch Job
-    |
-    v
-PostgreSQL Analytics Tables
-    |
-    v
-ML Customer Feature Table
-    |
-    v
-Airflow Scheduling and Monitoring
+This project was developed as part of the **DLMDSEDE02 – Data Engineering** module at **IU International University of Applied Sciences**.
+
+---
+
+# Architecture
+
 ```
 
-## Microservices
+                 Instacart Dataset
 
-| Service | Purpose | Technology |
-| --- | --- | --- |
-| Data ingestion | Validates raw order rows and publishes them to Kafka | Python, Docker |
-| Kafka | Decouples ingestion from processing and persists messages | Apache Kafka |
-| Spark | Cleans data and generates batch aggregates | PySpark |
-| PostgreSQL | Stores structured analytics outputs | PostgreSQL |
-| Airflow | Orchestrates daily, weekly, and monthly workflows | Apache Airflow |
-| ML delivery layer | Publishes customer-level feature outputs for model training or scoring | PostgreSQL, CSV preview |
+                         │
 
-## Business Insights
+                         ▼
 
-The batch job produces these analytics tables:
+              Data Ingestion Service
 
-- `monthly_sales`: monthly order and revenue trends
-- `top_products`: most purchased products by quantity and revenue
-- `customer_metrics`: customer purchase frequency, spend, retention indicators
-- `category_performance`: product category revenue and basket behavior
-- `ml_customer_features`: model-ready customer features and repeat-customer label
+                         │
 
-## Project Structure
+                  Publish Events
 
-```text
-.
-├── airflow/dags/ecommerce_batch_pipeline.py
-├── data/raw/orders.csv
-├── docker-compose.yml
-├── docs/architecture.md
+                         ▼
+
+                  Apache Kafka
+
+                         │
+
+                  Stream Processing
+
+                         ▼
+
+                  Apache Spark
+
+                         │
+
+                  Processed Data
+
+                         ▼
+
+                   PostgreSQL
+
+                 /             \
+
+                ▼               ▼
+
+      Analytics Tables   ML Feature Tables
+
+                ▲
+
+                │
+
+         Apache Airflow
+
+     (Workflow Orchestration)
+
+```
+
+---
+
+# Technology Stack
+
+| Technology | Purpose |
+
+|------------|---------|
+
+| Python | Data ingestion and automation |
+
+| Apache Kafka | Message broker |
+
+| Apache Spark | Batch processing |
+
+| PostgreSQL | Data storage |
+
+| Apache Airflow | Workflow orchestration |
+
+| Docker | Containerization |
+
+| Docker Compose | Infrastructure as Code |
+
+| Git | Version Control |
+
+| GitHub | Repository Hosting |
+
+---
+
+# Features
+
+- Batch processing pipeline
+
+- Docker-based microservices
+
+- Apache Kafka messaging
+
+- Apache Spark transformations
+
+- PostgreSQL analytical storage
+
+- Apache Airflow workflow orchestration
+
+- Machine learning feature generation
+
+- Reproducible Infrastructure as Code deployment
+
+---
+
+# Repository Structure
+
+```
+
+Batch-Processing-Data-Architecture-for-E-commerce-Analytics/
+
+│
+
+├── airflow/
+
+│   └── dags/
+
+│
+
+├── data/
+
+│   └── raw/
+
+│
+
+├── docs/
+
+│
+
 ├── ingestion_service/
-│   ├── Dockerfile
-│   ├── producer.py
-│   └── requirements.txt
+
+│
+
+├── scripts/
+
+│
+
 ├── spark_jobs/
-│   ├── Dockerfile
-│   ├── batch_analytics.py
-│   └── requirements.txt
-├── sql/init.sql
-├── scripts/run_local_batch.sh
-└── tests/test_transformations.py
+
+│
+
+├── sql/
+
+│
+
+├── tests/
+
+│
+
+├── docker-compose.yml
+
+│
+
+├── requirements.txt
+
+│
+
+├── .env.example
+
+│
+
+└── README.md
+
 ```
 
-## Quick Start
+---
 
-### Local Preview Without Docker
+# Dataset
 
-If Docker is not installed, you can still run a dependency-free preview of the analytics logic:
+Dataset:
+
+**Instacart Market Basket Analysis**
+
+The dataset contains customer orders, product information, departments, aisles, and purchasing history that are used to simulate a real-world e-commerce batch-processing environment.
+
+---
+
+# Data Processing Workflow
+
+1. Read Instacart dataset
+
+2. Validate incoming records
+
+3. Publish events to Apache Kafka
+
+4. Consume events using Apache Spark
+
+5. Clean and transform data
+
+6. Generate analytical datasets
+
+7. Store results in PostgreSQL
+
+8. Orchestrate execution using Apache Airflow
+
+---
+
+# Generated Analytics
+
+The pipeline generates several analytical datasets including:
+
+- Monthly Sales
+
+- Top Products
+
+- Customer Metrics
+
+- Category Performance
+
+- Machine Learning Customer Features
+
+These datasets support future business intelligence and predictive analytics applications.
+
+---
+
+# Prerequisites
+
+Before running the project, install:
+
+- Docker Desktop
+
+- Docker Compose
+
+- Git
+
+- Python 3.11+
+
+- PostgreSQL (if running outside Docker)
+
+---
+
+# Installation
+
+Clone the repository
 
 ```bash
-python3 scripts/local_preview.py
+
+git clone https://github.com/Shazam-saifi/Batch-Processing-Data-Architecture-for-E-commerce-Analytics.git
+
 ```
 
-This writes CSV outputs to `data/processed/`.
-
-When the official Instacart archive exists at `data/raw/instacart/`, the preview writes:
-
-```text
-instacart_monthly_sales.csv
-instacart_top_products.csv
-instacart_customer_metrics.csv
-instacart_category_performance.csv
-instacart_ml_customer_features.csv
-```
-
-The default preview uses the first 250,000 order-product rows so it runs quickly:
+Navigate into the project
 
 ```bash
-python3 scripts/local_preview.py
+
+cd Batch-Processing-Data-Architecture-for-E-commerce-Analytics
+
 ```
 
-To process more rows:
+Create the environment configuration
 
 ```bash
-INSTACART_MAX_ROWS=1000000 python3 scripts/local_preview.py
+
+cp .env.example .env
+
 ```
 
-To process the full archive:
+---
+
+# Running the Project
+
+Start all services
 
 ```bash
-INSTACART_MAX_ROWS=0 python3 scripts/local_preview.py
+
+docker compose up --build
+
 ```
 
-### Full Container Stack
+Verify running containers
 
-1. Review the example environment values:
+```bash
 
-   ```bash
-   cat .env.example
-   ```
+docker ps
 
-   The Docker Compose stack uses these local defaults. Create a `.env` file only if you want to keep private overrides outside version control.
-
-2. Start the stack:
-
-   ```bash
-   docker compose up --build
-   ```
-
-3. In another terminal, run ingestion:
-
-   ```bash
-   docker compose run --rm --build ingestion
-   ```
-
-4. Run the Spark batch job:
-
-   ```bash
-   docker compose run --rm --build spark-job
-   ```
-
-5. Query PostgreSQL:
-
-   ```bash
-   docker compose exec postgres psql -U ecommerce -d ecommerce_analytics
-   ```
-
-   PostgreSQL is also exposed on host port `5433` by default to avoid conflicts
-   with local database installs. Override it with `POSTGRES_HOST_PORT=5432`
-   if you want the original host port.
-
-   Example:
-
-   ```sql
-   select * from analytics.monthly_sales;
-   select * from analytics.top_products limit 10;
-   select * from analytics.ml_customer_features limit 10;
-   ```
-
-Airflow UI is available at `http://localhost:8081` by default after the stack is
-running. Kafka is exposed on host port `19092` by default. Override these with
-`AIRFLOW_HOST_PORT=8080` or `KAFKA_HOST_PORT=9092` if you want the original host
-ports. Default credentials are configured in `.env.example`.
-
-## Dataset
-
-The project includes two dataset options:
-
-- `data/raw/orders.csv`: a small Instacart-like sample file for quick Docker pipeline demos.
-- `data/raw/instacart/`: the official Instacart Market Basket Analysis archive.
-
-The official archive contains:
-
-```text
-aisles.csv
-departments.csv
-order_products__prior.csv
-order_products__train.csv
-orders.csv
-products.csv
 ```
 
-The official Instacart data does not include prices or real calendar dates. The local preview reconstructs approximate order dates from `days_since_prior_order` and reports basket volume metrics instead of true revenue.
+Open Airflow
 
-## Conception Phase Alignment
+```
 
-| PDF section | Project implementation |
-| --- | --- |
-| Project overview | README objective and end-to-end batch analytics workflow |
-| Selected dataset | Sample Instacart-like file plus official Instacart archive support |
-| System architecture | Ingestion, Kafka, Spark, PostgreSQL, Airflow, and ML feature delivery |
-| Microservices design | Dedicated Docker services for ingestion, messaging, processing, storage, and orchestration |
-| Docker and IaC | `docker-compose.yml`, service Dockerfiles, environment configuration, and SQL schema |
-| Reliability | Kafka durability, Airflow retries, PostgreSQL health checks, restart policies |
-| Scalability | Kafka partitions, Spark batch processing, independent service scaling |
-| Maintainability | Modular Python services, documented architecture, repeatable local preview, tests |
-| Security and governance | Environment-based credentials, validation, logs, version-controlled infrastructure |
-| Advantages and disadvantages | Documented trade-offs in `docs/architecture.md` |
-| Conclusion | Working prototype demonstrates the proposed conception-phase architecture |
+http://localhost:8080
 
-## Reliability
+```
 
-- Kafka topic persistence keeps ingested records durable.
-- Airflow tasks use retries and retry delays.
-- Docker restart policies are set on long-running services.
-- PostgreSQL stores processed outputs in typed analytics tables.
-- Service boundaries isolate failures between ingestion, messaging, processing, and storage.
+Trigger the batch-processing workflow.
 
-## Scalability
+---
 
-- Kafka topic partitioning supports higher ingestion throughput.
-- Spark jobs can move from local mode to a distributed Spark cluster.
-- Each service can scale independently behind its container boundary.
-- Batch outputs are append-safe and can be partitioned by processing date.
+# Expected Pipeline
 
-## Security and Governance
+```
 
-- Credentials are provided through environment variables.
-- Raw ingestion validates required fields and numeric values.
-- Processing writes logs for observability.
-- Infrastructure configuration is version controlled.
-- Database volumes can be backed up independently from application containers.
-- ML-ready outputs are generated from curated analytics data rather than directly from unchecked raw files.
+Dataset
+
+    │
+
+    ▼
+
+Ingestion Service
+
+    │
+
+    ▼
+
+Kafka
+
+    │
+
+    ▼
+
+Spark
+
+    │
+
+    ▼
+
+PostgreSQL
+
+```
+
+---
